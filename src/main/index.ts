@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Tray, nativeImage, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -36,6 +36,11 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  mainWindow.on('close', (event) => {
+    event.preventDefault()
+    mainWindow.hide()
+  })
 }
 
 // This method will be called when Electron has finished
@@ -52,8 +57,63 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  app.on('before-quit', () => {
+    tray?.destroy()
+  })
+
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  ipcMain.on('minimize-window', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) {
+      win.hide()
+    }
+  })
+
+  let tray: Tray | null = null
+  app.whenReady().then(() => {
+    // 创建托盘
+    const icon = nativeImage.createFromPath('path/to/icon.png') // 使用你的图标路径
+    tray = new Tray(icon)
+
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: '显示',
+        click: () => {
+          const win = BrowserWindow.getAllWindows()[0]
+          if (win) {
+            win.show()
+            win.focus()
+          } else {
+            createWindow()
+          }
+        }
+      },
+      {
+        label: '退出',
+        click: () => {
+          app.quit()
+        }
+      }
+    ])
+
+    tray.setToolTip('Quick Note')
+    tray.setContextMenu(contextMenu)
+
+    // 点击托盘图标显示/隐藏窗口
+    tray.on('click', () => {
+      const win = BrowserWindow.getAllWindows()[0]
+      if (win) {
+        if (win.isVisible()) {
+          win.hide()
+        } else {
+          win.show()
+          win.focus()
+        }
+      }
+    })
+  })
 
   createWindow()
 
