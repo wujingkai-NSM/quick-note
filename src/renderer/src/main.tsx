@@ -1,11 +1,11 @@
 import './assets/main.css'
-
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <div className="border-section">
+      <input type="text" placeholder="/? 键入获取更多的提示信息" />
+    </div>
   </StrictMode>
 )
