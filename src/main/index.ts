@@ -61,9 +61,6 @@ app.whenReady().then(() => {
     tray?.destroy()
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
   ipcMain.on('minimize-window', () => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) {
