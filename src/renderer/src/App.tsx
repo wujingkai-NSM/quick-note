@@ -1,62 +1,60 @@
 import { useEffect, useState } from 'react';
 import { NoteInput } from './components/NoteInput';
-import { CommandMenu } from './components/CommandMenu';
 import { StatusIndicator } from './components/StatusIndicator';
 import { ListPage } from './pages/ListPage';
+import { HelpPage } from './pages/HelpPage';
 import { useNote } from './hooks/useNote';
 import { extractContentAndCommand } from './utils/commandParser';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'main' | 'list'>('main');
+  const [currentPage, setCurrentPage] = useState<'main' | 'list' | 'help'>('main');
   const {
     noteCount,
     status,
-    showHelp,
-    commands,
     handleCommand,
-    handleContent,
-    setShowHelp
+    handleContent
   } = useNote();
 
   useEffect(() => {
     const hash = window.location.hash;
     if (hash === '#list') {
       setCurrentPage('list');
+    } else if (hash === '#help') {
+      setCurrentPage('help');
     }
 
     const handleHashChange = () => {
       const newHash = window.location.hash;
-      setCurrentPage(newHash === '#list' ? 'list' : 'main');
+      if (newHash === '#list') {
+        setCurrentPage('list');
+      } else if (newHash === '#help') {
+        setCurrentPage('help');
+      } else {
+        setCurrentPage('main');
+      }
     };
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowHelp(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setShowHelp]);
-
-  const handleSubmit = (content: string) => {
+  const handleSubmit = (content: string, noteId?: string) => {
+    console.log('handleSubmit called:', { content, noteId });
     const { content: cleanedContent, command } = extractContentAndCommand(content);
     
     if (command) {
       handleCommand(command.command, command.args, cleanedContent);
     } else {
-      handleContent(content);
+      handleContent(content, noteId);
     }
   };
 
   const handleCommandWrapper = async (command: string, args: string, content: string) => {
     if (command === '/list' || command === '/search') {
       window.quickNote.app.showList();
+      window.quickNote.app.minimize();
+    } else if (command === '/help') {
+      window.quickNote.app.showHelp();
       window.quickNote.app.minimize();
     } else {
       await handleCommand(command, args, content);
@@ -73,6 +71,16 @@ function App() {
     );
   }
 
+  if (currentPage === 'help') {
+    return (
+      <div className="app-container">
+        <div className="main-window help-window">
+          <HelpPage />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <div className="main-window">
@@ -82,10 +90,6 @@ function App() {
           noteCount={noteCount}
         />
         <StatusIndicator status={status} />
-        
-        {showHelp && (
-          <CommandMenu commands={commands} />
-        )}
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
-import { ipcMain, dialog, shell } from 'electron';
+import { ipcMain, dialog, shell, BrowserWindow } from 'electron';
 import { 
   createNote, 
   appendToLastNote, 
   renameLastNote, 
+  updateNote,
   listNotes, 
   searchNotes, 
   getNotesCount,
@@ -12,17 +13,35 @@ import {
 } from './dataManager';
 import type { Note } from './types';
 
+const sendNotesChanged = () => {
+  BrowserWindow.getAllWindows().forEach(window => {
+    window.webContents.send('app:notesChanged');
+  });
+};
+
 export function setupIpcHandlers(): void {
   ipcMain.handle('note:create', async (_, content: string) => {
-    return createNote(content);
+    const result = createNote(content);
+    if (result.success) sendNotesChanged();
+    return result;
   });
 
   ipcMain.handle('note:append', async (_, content: string) => {
-    return appendToLastNote(content);
+    const result = appendToLastNote(content);
+    if (result.success) sendNotesChanged();
+    return result;
   });
 
   ipcMain.handle('note:rename', async (_, newTitle: string) => {
-    return renameLastNote(newTitle);
+    const result = renameLastNote(newTitle);
+    if (result.success) sendNotesChanged();
+    return result;
+  });
+
+  ipcMain.handle('note:update', async (_, noteId: string, content: string) => {
+    const result = updateNote(noteId, content);
+    if (result.success) sendNotesChanged();
+    return result;
   });
 
   ipcMain.handle('note:list', async (_, limit?: number) => {

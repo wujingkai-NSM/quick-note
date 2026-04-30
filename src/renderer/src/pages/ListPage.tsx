@@ -25,6 +25,17 @@ export function ListPage({ searchKeyword }: ListPageProps) {
   }, [loadNotes]);
 
   useEffect(() => {
+    const handleNotesChanged = () => {
+      loadNotes();
+    };
+
+    window.addEventListener('notesChanged', handleNotesChanged);
+    return () => {
+      window.removeEventListener('notesChanged', handleNotesChanged);
+    };
+  }, [loadNotes]);
+
+  useEffect(() => {
     const headerHeight = 36;
     const footerHeight = 32;
     const noteHeight = 30;
@@ -41,6 +52,12 @@ export function ListPage({ searchKeyword }: ListPageProps) {
     window.quickNote.app.resizeListWindow(totalHeight);
   }, [notes.length]);
 
+  const handleNoteSelect = useCallback((note: Note) => {
+    window.quickNote.app.hideList();
+    window.quickNote.app.setNoteContent(note.id, note.content);
+    window.quickNote.app.showMain();
+  }, []);
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       window.quickNote.app.hideList();
@@ -51,10 +68,9 @@ export function ListPage({ searchKeyword }: ListPageProps) {
       e.preventDefault();
       setSelectedIndex(prev => Math.min(notes.length - 1, prev + 1));
     } else if (e.key === 'Enter' && notes[selectedIndex]) {
-      navigator.clipboard.writeText(notes[selectedIndex].content);
-      window.quickNote.app.hideList();
+      handleNoteSelect(notes[selectedIndex]);
     }
-  }, [notes, selectedIndex]);
+  }, [notes, selectedIndex, handleNoteSelect]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -83,10 +99,7 @@ export function ListPage({ searchKeyword }: ListPageProps) {
             <div
               key={note.id}
               className={`note-entry ${index === selectedIndex ? 'selected' : ''}`}
-              onClick={() => {
-                navigator.clipboard.writeText(note.content);
-                window.quickNote.app.hideList();
-              }}
+              onClick={() => handleNoteSelect(note)}
             >
               <span className="note-title-text">{note.title}</span>
               <span className="note-time">{formatDate(note.createdAt)}</span>
@@ -95,7 +108,7 @@ export function ListPage({ searchKeyword }: ListPageProps) {
         )}
       </div>
       <div className="list-footer">
-        <span>↑↓ 选择 · Enter 复制 · Esc 关闭</span>
+        <span>↑↓ 选择 · Enter 编辑 · Esc 关闭</span>
       </div>
     </div>
   );

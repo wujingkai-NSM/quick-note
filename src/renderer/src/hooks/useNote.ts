@@ -11,9 +11,6 @@ export function useNote() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [noteCount, setNoteCount] = useState(0);
   const [status, setStatus] = useState<StatusMessage | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
-  const [showList, setShowList] = useState(false);
-  const [searchResults, setSearchResults] = useState<Note[]>([]);
 
   const showStatus = useCallback((type: StatusMessage['type'], message: string, duration = 1000) => {
     setStatus({ type, message });
@@ -26,6 +23,18 @@ export function useNote() {
     const result = await window.quickNote.note.create(content);
     if (result.success) {
       showStatus('success', '笔记创建成功');
+      await refreshNotes();
+    } else {
+      showStatus('error', result.message);
+    }
+  }, [showStatus]);
+
+  const updateNote = useCallback(async (noteId: string, content: string) => {
+    if (!content.trim()) return;
+    
+    const result = await window.quickNote.note.update(noteId, content);
+    if (result.success) {
+      showStatus('success', '笔记更新成功');
       await refreshNotes();
     } else {
       showStatus('error', result.message);
@@ -54,40 +63,6 @@ export function useNote() {
     }
   }, [showStatus]);
 
-  const listNotes = useCallback(async (limit = 10) => {
-    const result = await window.quickNote.note.list(limit);
-    setNotes(result.notes);
-    setShowList(true);
-    setShowHelp(false);
-    setSearchResults([]);
-  }, []);
-
-  const searchNotes = useCallback(async (keyword: string) => {
-    const result = await window.quickNote.note.search(keyword);
-    setSearchResults(result.notes);
-    setShowList(true);
-    setShowHelp(false);
-  }, []);
-
-  const exportData = useCallback(async () => {
-    const result = await window.quickNote.app.export();
-    if (result.success) {
-      showStatus('success', '导出成功');
-    } else {
-      showStatus('error', result.message);
-    }
-  }, [showStatus]);
-
-  const importData = useCallback(async () => {
-    const result = await window.quickNote.app.import();
-    if (result.success) {
-      showStatus('success', '导入成功');
-      await refreshNotes();
-    } else {
-      showStatus('error', result.message);
-    }
-  }, [showStatus]);
-
   const refreshNotes = useCallback(async () => {
     const result = await window.quickNote.note.list();
     setNotes(result.notes);
@@ -96,10 +71,6 @@ export function useNote() {
   }, []);
 
   const handleCommand = useCallback(async (command: string, args: string, content: string) => {
-    setShowList(false);
-    setShowHelp(false);
-    setSearchResults([]);
-
     switch (command) {
       case '/new-file':
         await createNote(content);
@@ -110,31 +81,40 @@ export function useNote() {
       case '/rename':
         await renameLastNote(args);
         break;
-      case '/list':
-        await listNotes();
-        break;
-      case '/search':
-        await searchNotes(args);
-        break;
       case '/export':
-        await exportData();
+        const exportResult = await window.quickNote.app.export();
+        if (exportResult.success) {
+          showStatus('success', '导出成功');
+        } else {
+          showStatus('error', exportResult.message);
+        }
         break;
       case '/import':
-        await importData();
-        break;
-      case '/help':
-        setShowHelp(true);
-        setShowList(false);
+        const importResult = await window.quickNote.app.import();
+        if (importResult.success) {
+          showStatus('success', '导入成功');
+          await refreshNotes();
+        } else {
+          showStatus('error', importResult.message);
+        }
         break;
       default:
         showStatus('error', '未知命令');
     }
-  }, [createNote, appendToLastNote, renameLastNote, listNotes, searchNotes, exportData, importData, showStatus]);
+  }, [createNote, appendToLastNote, renameLastNote, showStatus, refreshNotes]);
 
-  const handleContent = useCallback(async (content: string) => {
+  const handleContent = useCallback(async (content: string, noteId?: string) => {
+    console.log('handleContent called:', { content, noteId });
     if (!content.trim()) return;
-    await createNote(content);
-  }, [createNote]);
+    
+    if (noteId) {
+      console.log('Updating note:', noteId);
+      await updateNote(noteId, content);
+    } else {
+      console.log('Creating new note');
+      await createNote(content);
+    }
+  }, [createNote, updateNote]);
 
   useEffect(() => {
     refreshNotes();
@@ -144,14 +124,9 @@ export function useNote() {
     notes,
     noteCount,
     status,
-    showHelp,
-    showList,
-    searchResults,
     commands: COMMANDS,
     handleCommand,
     handleContent,
-    showStatus,
-    setShowList,
-    setShowHelp
+    showStatus
   };
 }

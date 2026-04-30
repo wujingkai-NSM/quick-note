@@ -1,7 +1,6 @@
 export interface ParsedCommand {
   command: string;
   args: string;
-  content: string;
 }
 
 export interface CommandInfo {
@@ -22,46 +21,65 @@ export const COMMANDS: CommandInfo[] = [
   { command: '/help', description: '显示帮助', example: '/help', hasArgs: false }
 ];
 
-export function parseCommand(input: string): ParsedCommand | null {
-  const trimmed = input.trim();
+function findCommandInLine(line: string): { command: string; args: string; before: string } | null {
+  const trimmed = line.trim();
   
-  if (!trimmed.startsWith('/')) {
+  if (!trimmed.includes('/')) {
     return null;
   }
 
-  const spaceIndex = trimmed.indexOf(' ');
-  
-  if (spaceIndex === -1) {
-    const command = trimmed;
-    const isValid = COMMANDS.some(c => c.command === command);
-    return isValid ? { command, args: '', content: '' } : null;
+  for (const cmd of COMMANDS) {
+    const cmdIndex = trimmed.lastIndexOf(cmd.command);
+    
+    if (cmdIndex !== -1) {
+      const before = trimmed.substring(0, cmdIndex).trim();
+      const after = trimmed.substring(cmdIndex + cmd.command.length).trim();
+      
+      if (cmd.hasArgs) {
+        return {
+          command: cmd.command,
+          args: after,
+          before
+        };
+      } else {
+        if (after === '' || after.startsWith('/')) {
+          return {
+            command: cmd.command,
+            args: '',
+            before
+          };
+        }
+      }
+    }
   }
-
-  const command = trimmed.substring(0, spaceIndex);
-  const args = trimmed.substring(spaceIndex + 1);
   
-  const commandInfo = COMMANDS.find(c => c.command === command);
-  
-  if (!commandInfo) {
-    return null;
-  }
-
-  return { command, args, content: '' };
+  return null;
 }
 
 export function extractContentAndCommand(input: string): { content: string; command: ParsedCommand | null } {
   const lines = input.split('\n');
-  
-  for (let i = 0; i < lines.length; i++) {
-    const parsed = parseCommand(lines[i]);
-    if (parsed) {
-      const contentLines = lines.filter((_, idx) => idx !== i);
-      return {
-        content: contentLines.join('\n'),
-        command: parsed
+  let contentLines: string[] = [];
+  let foundCommand: ParsedCommand | null = null;
+
+  for (const line of lines) {
+    const result = findCommandInLine(line);
+    
+    if (result && !foundCommand) {
+      foundCommand = {
+        command: result.command,
+        args: result.args
       };
+      
+      if (result.before) {
+        contentLines.push(result.before);
+      }
+    } else {
+      contentLines.push(line);
     }
   }
 
-  return { content: input, command: null };
+  return {
+    content: contentLines.join('\n').trim(),
+    command: foundCommand
+  };
 }

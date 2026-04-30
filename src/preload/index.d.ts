@@ -22,7 +22,8 @@ declare global {
       note: {
         create: (content: string) => Promise<CommandResult>;
         append: (content: string) => Promise<CommandResult>;
-        rename: (newTitle: string) => Promise<CommandResult>;
+        update: (noteId: string, content: string) => Promise<CommandResult>;
+        rename: (title: string) => Promise<CommandResult>;
         list: (limit?: number) => Promise<ListResult>;
         search: (keyword: string) => Promise<SearchResult>;
         count: () => Promise<number>;
@@ -33,8 +34,12 @@ declare global {
         openDataDir: () => Promise<{ success: boolean }>;
         getNotes: () => Promise<Note[]>;
         showList: () => void;
+        showHelp: () => void;
+        showMain: () => void;
         hideList: () => void;
         resizeListWindow: (height: number) => void;
+        resizeMainWindow: (height: number) => void;
+        setNoteContent: (noteId: string, content: string) => void;
         onBlur: (callback: () => void) => () => void;
         minimize: () => void;
       };

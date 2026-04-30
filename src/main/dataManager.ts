@@ -132,6 +132,26 @@ export function renameLastNote(newTitle: string): CommandResult {
   return { success: true, message: '重命名成功', data: note };
 }
 
+export function updateNote(noteId: string, content: string): CommandResult {
+  if (!content.trim()) {
+    return { success: false, message: '内容不能为空' };
+  }
+
+  const note = dataStore.notes.find(n => n.id === noteId);
+  
+  if (!note) {
+    return { success: false, message: '笔记不存在' };
+  }
+
+  note.content = content.trim();
+  note.title = extractTitle(content);
+  note.updatedAt = new Date().toISOString();
+  dataStore.lastNoteId = noteId;
+  saveDataStore();
+
+  return { success: true, message: '笔记更新成功', data: note };
+}
+
 export function listNotes(limit: number = 10): Note[] {
   return dataStore.notes.slice(0, limit);
 }

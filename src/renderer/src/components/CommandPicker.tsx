@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CommandInfo } from '../utils/commandParser';
 
 interface CommandPickerProps {
@@ -24,26 +24,6 @@ export function CommandPicker({ commands, inputValue, onSelect, onClose }: Comma
       listRef.current.scrollTop = 0;
     }
   }, [filteredCommands]);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      selectedIndexRef.current = Math.max(0, selectedIndexRef.current - 1);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      selectedIndexRef.current = Math.min(filteredCommands.length - 1, selectedIndexRef.current + 1);
-    } else if (e.key === 'Enter' && filteredCommands[selectedIndexRef.current]) {
-      onSelect(filteredCommands[selectedIndexRef.current]);
-      onClose();
-    }
-  }, [filteredCommands, onSelect, onClose]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
 
   return (
     <div className="command-picker-overlay" onClick={onClose}>

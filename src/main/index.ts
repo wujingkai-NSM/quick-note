@@ -4,7 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import { initDataManager } from './dataManager';
 import { setupIpcHandlers } from './ipcHandlers';
-import { registerShortcut, unregisterShortcut, getShortcut } from './shortcutManager';
+import { registerShortcut, unregisterShortcut, getShortcut, setMainWindow } from './shortcutManager';
 
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -31,9 +31,14 @@ function createWindow(): void {
     }
   });
 
+  setMainWindow(mainWindow);
+
+  let isWindowReady = false;
+
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
     mainWindow?.focus();
+    isWindowReady = true;
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -52,11 +57,7 @@ function createWindow(): void {
     mainWindow?.hide();
   });
 
-  mainWindow.on('blur', () => {
-    mainWindow?.webContents.send('app:blur');
-    mainWindow?.hide();
-  });
-}
+  }
 
 function createListWindow(): void {
   if (listWindow) {
@@ -114,8 +115,78 @@ function createListWindow(): void {
   });
 }
 
+let helpWindow: BrowserWindow | null = null;
+
+function createHelpWindow(): void {
+  if (helpWindow) {
+    helpWindow.show();
+    helpWindow.focus();
+    return;
+  }
+
+  helpWindow = new BrowserWindow({
+    width: 320,
+    height: 400,
+    show: false,
+    resizable: false,
+    frame: false,
+    autoHideMenuBar: true,
+    alwaysOnTop: true,
+    transparent: true,
+    ...(process.platform === 'linux' ? { icon } : {}),
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  helpWindow.on('ready-to-show', () => {
+    helpWindow?.show();
+    helpWindow?.focus();
+  });
+
+  helpWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url);
+    return { action: 'deny' };
+  });
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    helpWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#help`);
+  } else {
+    helpWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: 'help' });
+  }
+
+  helpWindow.on('close', (event) => {
+    event.preventDefault();
+    helpWindow?.hide();
+  });
+
+  helpWindow.on('blur', () => {
+    helpWindow?.hide();
+  });
+
+  helpWindow.on('closed', () => {
+    helpWindow = null;
+  });
+}
+
 ipcMain.on('app:showList', () => {
   createListWindow();
+});
+
+ipcMain.on('app:showHelp', () => {
+  createHelpWindow();
+});
+
+ipcMain.on('app:showMain', () => {
+  mainWindow?.show();
+  mainWindow?.focus();
+});
+
+ipcMain.on('app:setNoteContent', (_, noteId: string, content: string) => {
+  mainWindow?.webContents.send('app:noteContent', noteId, content);
 });
 
 ipcMain.on('app:hideList', () => {
@@ -134,10 +205,14 @@ ipcMain.on('app:resizeListWindow', (_, height: number) => {
 ipcMain.on('app:resizeMainWindow', (_, height: number) => {
   if (mainWindow) {
     const minHeight = 40;
-    const maxHeight = 300;
+    const maxHeight = 200;
     const actualHeight = Math.max(minHeight, Math.min(maxHeight, height));
-    mainWindow.setSize(300, actualHeight);
+    mainWindow.setSize(400, actualHeight);
   }
+});
+
+ipcMain.on('minimize-window', () => {
+  mainWindow?.hide();
 });
 
 function createTray(): void {

@@ -25,7 +25,10 @@ const api = {
     append: async (content: string): Promise<CommandResult> => {
       return ipcRenderer.invoke('note:append', content);
     },
-    rename: async (newTitle: string): Promise<CommandResult> => {
+    update: async (noteId: string, content: string): Promise<CommandResult> => {
+      return ipcRenderer.invoke('note:update', noteId, content);
+    },
+    rename: async (title: string): Promise<CommandResult> => {
       return ipcRenderer.invoke('note:rename', newTitle);
     },
     list: async (limit?: number): Promise<ListResult> => {
@@ -54,6 +57,12 @@ const api = {
     showList: () => {
       ipcRenderer.send('app:showList');
     },
+    showHelp: () => {
+      ipcRenderer.send('app:showHelp');
+    },
+    showMain: () => {
+      ipcRenderer.send('app:showMain');
+    },
     hideList: () => {
       ipcRenderer.send('app:hideList');
     },
@@ -62,6 +71,9 @@ const api = {
     },
     resizeMainWindow: (height: number) => {
       ipcRenderer.send('app:resizeMainWindow', height);
+    },
+    setNoteContent: (noteId: string, content: string) => {
+      ipcRenderer.send('app:setNoteContent', noteId, content);
     },
     onBlur: (callback: () => void) => {
       ipcRenderer.on('app:blur', callback);
@@ -72,5 +84,15 @@ const api = {
     }
   }
 };
+
+ipcRenderer.on('app:noteContent', (_: unknown, noteId: string, content: string) => {
+  window.dispatchEvent(new CustomEvent('noteContent', {
+    detail: { noteId, content }
+  }));
+});
+
+ipcRenderer.on('app:notesChanged', () => {
+  window.dispatchEvent(new CustomEvent('notesChanged'));
+});
 
 contextBridge.exposeInMainWorld('quickNote', api);

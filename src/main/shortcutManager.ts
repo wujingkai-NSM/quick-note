@@ -4,6 +4,11 @@ const DEFAULT_SHORTCUT = process.platform === 'darwin' ? 'Option+Space' : 'Alt+S
 
 let currentShortcut = DEFAULT_SHORTCUT;
 let registered = false;
+let mainWindow: BrowserWindow | null = null;
+
+export function setMainWindow(window: BrowserWindow): void {
+  mainWindow = window;
+}
 
 export function registerShortcut(): boolean {
   if (registered) {
@@ -12,13 +17,12 @@ export function registerShortcut(): boolean {
 
   try {
     const success = globalShortcut.register(currentShortcut, () => {
-      const win = BrowserWindow.getAllWindows()[0];
-      if (win) {
-        if (win.isVisible()) {
-          win.hide();
+      if (mainWindow) {
+        if (mainWindow.isVisible()) {
+          mainWindow.hide();
         } else {
-          win.show();
-          win.focus();
+          mainWindow.show();
+          mainWindow.focus();
         }
       }
     });
