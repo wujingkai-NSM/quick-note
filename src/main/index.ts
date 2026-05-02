@@ -8,13 +8,12 @@ import { registerShortcut, unregisterShortcut, getShortcut, setMainWindow } from
 
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
-let listWindow: BrowserWindow | null = null;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 300,
-    height: 40,
-    minHeight: 40,
+    height: 44,
+    minHeight: 44,
     maxHeight: 300,
     show: false,
     resizable: false,
@@ -33,12 +32,9 @@ function createWindow(): void {
 
   setMainWindow(mainWindow);
 
-  let isWindowReady = false;
-
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
     mainWindow?.focus();
-    isWindowReady = true;
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -57,157 +53,54 @@ function createWindow(): void {
     mainWindow?.hide();
   });
 
-  }
-
-function createListWindow(): void {
-  if (listWindow) {
-    listWindow.show();
-    listWindow.focus();
-    return;
-  }
-
-  listWindow = new BrowserWindow({
-    width: 300,
-    minHeight: 100,
-    maxHeight: 360,
-    show: false,
-    resizable: false,
-    frame: false,
-    autoHideMenuBar: true,
-    alwaysOnTop: true,
-    transparent: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      nodeIntegration: false,
-      contextIsolation: true
-    }
-  });
-
-  listWindow.on('ready-to-show', () => {
-    listWindow?.show();
-    listWindow?.focus();
-  });
-
-  listWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
-    return { action: 'deny' };
-  });
-
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    listWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#list`);
-  } else {
-    listWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: 'list' });
-  }
-
-  listWindow.on('close', (event) => {
-    event.preventDefault();
-    listWindow?.hide();
-  });
-
-  listWindow.on('blur', () => {
-    listWindow?.hide();
-  });
-
-  listWindow.on('closed', () => {
-    listWindow = null;
-  });
-}
-
-let helpWindow: BrowserWindow | null = null;
-
-function createHelpWindow(): void {
-  if (helpWindow) {
-    helpWindow.show();
-    helpWindow.focus();
-    return;
-  }
-
-  helpWindow = new BrowserWindow({
-    width: 320,
-    height: 400,
-    show: false,
-    resizable: false,
-    frame: false,
-    autoHideMenuBar: true,
-    alwaysOnTop: true,
-    transparent: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      nodeIntegration: false,
-      contextIsolation: true
-    }
-  });
-
-  helpWindow.on('ready-to-show', () => {
-    helpWindow?.show();
-    helpWindow?.focus();
-  });
-
-  helpWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
-    return { action: 'deny' };
-  });
-
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    helpWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#help`);
-  } else {
-    helpWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: 'help' });
-  }
-
-  helpWindow.on('close', (event) => {
-    event.preventDefault();
-    helpWindow?.hide();
-  });
-
-  helpWindow.on('blur', () => {
-    helpWindow?.hide();
-  });
-
-  helpWindow.on('closed', () => {
-    helpWindow = null;
+  mainWindow.on('blur', () => {
+    mainWindow?.hide();
   });
 }
 
 ipcMain.on('app:showList', () => {
-  createListWindow();
+  if (mainWindow) {
+    mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL'] || 'file://'}#list`);
+    mainWindow.show();
+    mainWindow.focus();
+  }
 });
 
 ipcMain.on('app:showHelp', () => {
-  createHelpWindow();
+  if (mainWindow) {
+    mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL'] || 'file://'}#help`);
+    mainWindow.show();
+    mainWindow.focus();
+  }
 });
 
 ipcMain.on('app:showMain', () => {
-  mainWindow?.show();
-  mainWindow?.focus();
+  if (mainWindow) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] || 'file://');
+    mainWindow.show();
+    mainWindow.focus();
+  }
 });
 
 ipcMain.on('app:setNoteContent', (_, noteId: string, content: string) => {
   mainWindow?.webContents.send('app:noteContent', noteId, content);
 });
 
-ipcMain.on('app:hideList', () => {
-  listWindow?.hide();
-});
-
 ipcMain.on('app:resizeListWindow', (_, height: number) => {
-  if (listWindow) {
+  if (mainWindow) {
     const minHeight = 100;
     const maxHeight = 360;
     const actualHeight = Math.max(minHeight, Math.min(maxHeight, height));
-    listWindow.setSize(300, actualHeight);
+    mainWindow.setSize(300, actualHeight);
   }
 });
 
 ipcMain.on('app:resizeMainWindow', (_, height: number) => {
   if (mainWindow) {
-    const minHeight = 40;
+    const minHeight = 44;
     const maxHeight = 200;
     const actualHeight = Math.max(minHeight, Math.min(maxHeight, height));
-    mainWindow.setSize(400, actualHeight);
+    mainWindow.setSize(300, actualHeight);
   }
 });
 

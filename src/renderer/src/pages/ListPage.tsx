@@ -1,13 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Note } from '../../../main/types';
 
 interface ListPageProps {
   searchKeyword?: string;
+  onBack?: () => void;
+  onNoteSelect?: () => void;
 }
 
-export function ListPage({ searchKeyword }: ListPageProps) {
+export function ListPage({ searchKeyword, onBack, onNoteSelect }: ListPageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const notesListRef = useRef<HTMLDivElement>(null);
 
   const loadNotes = useCallback(async () => {
     if (searchKeyword) {
@@ -40,6 +43,8 @@ export function ListPage({ searchKeyword }: ListPageProps) {
     const footerHeight = 32;
     const noteHeight = 30;
     const emptyHeight = 80;
+    const inputHeight = 44;
+    const statusHeight = 32;
     
     let contentHeight: number;
     if (notes.length === 0) {
@@ -48,19 +53,18 @@ export function ListPage({ searchKeyword }: ListPageProps) {
       contentHeight = Math.min(notes.length * noteHeight, 260);
     }
     
-    const totalHeight = headerHeight + contentHeight + footerHeight;
-    window.quickNote.app.resizeListWindow(totalHeight);
+    const totalHeight = inputHeight + statusHeight + headerHeight + contentHeight + footerHeight;
+    window.quickNote.app.resizeListWindow(Math.min(totalHeight, 400));
   }, [notes.length]);
 
   const handleNoteSelect = useCallback((note: Note) => {
-    window.quickNote.app.hideList();
     window.quickNote.app.setNoteContent(note.id, note.content);
-    window.quickNote.app.showMain();
-  }, []);
+    onNoteSelect?.();
+  }, [onNoteSelect]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      window.quickNote.app.hideList();
+      onBack?.();
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex(prev => Math.max(0, prev - 1));
@@ -77,6 +81,27 @@ export function ListPage({ searchKeyword }: ListPageProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  useEffect(() => {
+    if (notesListRef.current && notes.length > 0) {
+      const selectedElement = notesListRef.current.querySelector(`.note-entry:nth-child(${selectedIndex + 1})`) as HTMLElement;
+      if (selectedElement) {
+        const listRect = notesListRef.current.getBoundingClientRect();
+        const elementRect = selectedElement.getBoundingClientRect();
+        const scrollTop = notesListRef.current.scrollTop;
+        const elementTop = elementRect.top - listRect.top + scrollTop;
+        const elementHeight = elementRect.height;
+        const listHeight = listRect.height;
+        
+        const targetScrollTop = elementTop - (listHeight / 2) + (elementHeight / 2);
+        
+        notesListRef.current.scrollTo({
+          top: targetScrollTop,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [selectedIndex, notes.length]);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('zh-CN', {
@@ -89,9 +114,9 @@ export function ListPage({ searchKeyword }: ListPageProps) {
     <div className="list-page">
       <div className="list-header-bar">
         <h2>{searchKeyword ? '搜索结果' : '最近笔记'}</h2>
-        <button className="close-btn" onClick={() => window.quickNote.app.hideList()}>×</button>
+        <button className="close-btn" onClick={onBack}>×</button>
       </div>
-      <div className="notes-list">
+      <div ref={notesListRef} className="notes-list">
         {notes.length === 0 ? (
           <div className="empty-message">暂无笔记</div>
         ) : (

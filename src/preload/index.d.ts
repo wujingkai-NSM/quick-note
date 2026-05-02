@@ -36,7 +36,6 @@ declare global {
         showList: () => void;
         showHelp: () => void;
         showMain: () => void;
-        hideList: () => void;
         resizeListWindow: (height: number) => void;
         resizeMainWindow: (height: number) => void;
         setNoteContent: (noteId: string, content: string) => void;

@@ -1,12 +1,16 @@
 import { useEffect, useCallback } from 'react';
 import { COMMANDS } from '../utils/commandParser';
 
-export function HelpPage() {
+interface HelpPageProps {
+  onBack?: () => void;
+}
+
+export function HelpPage({ onBack }: HelpPageProps) {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      window.quickNote.app.minimize();
+      onBack?.();
     }
-  }, []);
+  }, [onBack]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -17,7 +21,7 @@ export function HelpPage() {
     <div className="help-page">
       <div className="help-header-bar">
         <h2>命令帮助</h2>
-        <button className="close-btn" onClick={() => window.quickNote.app.minimize()}>×</button>
+        <button className="close-btn" onClick={onBack}>×</button>
       </div>
       <div className="help-content">
         <div className="help-section">

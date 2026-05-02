@@ -29,7 +29,7 @@ const api = {
       return ipcRenderer.invoke('note:update', noteId, content);
     },
     rename: async (title: string): Promise<CommandResult> => {
-      return ipcRenderer.invoke('note:rename', newTitle);
+      return ipcRenderer.invoke('note:rename', title);
     },
     list: async (limit?: number): Promise<ListResult> => {
       return ipcRenderer.invoke('note:list', limit);
@@ -62,9 +62,6 @@ const api = {
     },
     showMain: () => {
       ipcRenderer.send('app:showMain');
-    },
-    hideList: () => {
-      ipcRenderer.send('app:hideList');
     },
     resizeListWindow: (height: number) => {
       ipcRenderer.send('app:resizeListWindow', height);

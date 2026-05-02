@@ -80,31 +80,25 @@ export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps) {
       const trimmedValue = value.trim();
       
       if (trimmedValue === '/list') {
-        window.quickNote.app.showList();
         setValue('');
         setEditingNoteId(null);
         setShowPicker(false);
-        window.quickNote.app.minimize();
         onCommand('/list', '', '');
         return;
       }
       
       if (trimmedValue === '/help') {
-        window.quickNote.app.showHelp();
         setValue('');
         setEditingNoteId(null);
         setShowPicker(false);
-        window.quickNote.app.minimize();
         onCommand('/help', '', '');
         return;
       }
       
       if (trimmedValue.startsWith('/search')) {
-        window.quickNote.app.showList();
         setValue('');
         setEditingNoteId(null);
         setShowPicker(false);
-        window.quickNote.app.minimize();
         const keyword = trimmedValue.replace('/search ', '').trim();
         onCommand('/search', keyword, '');
         return;
