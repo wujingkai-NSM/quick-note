@@ -23,6 +23,7 @@ declare global {
         create: (content: string) => Promise<CommandResult>;
         append: (content: string) => Promise<CommandResult>;
         update: (noteId: string, content: string) => Promise<CommandResult>;
+        delete: (noteId: string) => Promise<CommandResult>;
         rename: (title: string) => Promise<CommandResult>;
         list: (limit?: number) => Promise<ListResult>;
         search: (keyword: string) => Promise<SearchResult>;
@@ -40,6 +41,9 @@ declare global {
         resizeMainWindow: (height: number) => void;
         setNoteContent: (noteId: string, content: string) => void;
         onBlur: (callback: () => void) => () => void;
+        onShowListPage: (callback: () => void) => () => void;
+        onShowHelpPage: (callback: () => void) => () => void;
+        onShowMainPage: (callback: () => void) => () => void;
         minimize: () => void;
       };
     };
