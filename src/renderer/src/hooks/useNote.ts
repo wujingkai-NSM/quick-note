@@ -118,6 +118,15 @@ export function useNote() {
 
   useEffect(() => {
     refreshNotes();
+
+    const handleNotesChanged = () => {
+      refreshNotes();
+    };
+
+    window.addEventListener('notesChanged', handleNotesChanged);
+    return () => {
+      window.removeEventListener('notesChanged', handleNotesChanged);
+    };
   }, [refreshNotes]);
 
   return {

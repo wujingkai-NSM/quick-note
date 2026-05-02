@@ -17,7 +17,7 @@ export function ListPage({ searchKeyword, onBack, onNoteSelect }: ListPageProps)
       const result = await window.quickNote.note.search(searchKeyword);
       setNotes(result.notes);
     } else {
-      const result = await window.quickNote.note.list(10);
+      const result = await window.quickNote.note.list(100);
       setNotes(result.notes);
     }
     setSelectedIndex(0);
@@ -43,18 +43,16 @@ export function ListPage({ searchKeyword, onBack, onNoteSelect }: ListPageProps)
     const footerHeight = 32;
     const noteHeight = 30;
     const emptyHeight = 80;
-    const inputHeight = 44;
-    const statusHeight = 32;
     
     let contentHeight: number;
     if (notes.length === 0) {
       contentHeight = emptyHeight;
     } else {
-      contentHeight = Math.min(notes.length * noteHeight, 400);
+      contentHeight = Math.min(notes.length * noteHeight, 600);
     }
     
     const totalHeight = headerHeight + contentHeight + footerHeight;
-    window.quickNote.app.resizeListWindow(Math.min(totalHeight, 500));
+    window.quickNote.app.resizeListWindow(Math.min(totalHeight, 700));
   }, [notes.length]);
 
   const handleNoteSelect = useCallback((note: Note) => {
@@ -94,22 +92,10 @@ export function ListPage({ searchKeyword, onBack, onNoteSelect }: ListPageProps)
     if (notesListRef.current && notes.length > 0) {
       const selectedElement = notesListRef.current.querySelector(`.note-entry:nth-child(${selectedIndex + 1})`) as HTMLElement;
       if (selectedElement) {
-        const listRect = notesListRef.current.getBoundingClientRect();
-        const elementRect = selectedElement.getBoundingClientRect();
-        const scrollTop = notesListRef.current.scrollTop;
-        const elementTop = elementRect.top - listRect.top + scrollTop;
-        const elementHeight = elementRect.height;
-        const listHeight = listRect.height;
-        
-        const targetScrollTop = elementTop - (listHeight / 2) + (elementHeight / 2);
-        
-        notesListRef.current.scrollTo({
-          top: targetScrollTop,
-          behavior: 'smooth'
-        });
+        selectedElement.scrollIntoView({ block: 'nearest', behavior: 'auto' });
       }
     }
-  }, [selectedIndex, notes.length]);
+  }, [selectedIndex]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

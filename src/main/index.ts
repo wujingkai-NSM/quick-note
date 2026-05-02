@@ -100,7 +100,7 @@ ipcMain.on('app:setNoteContent', (_, noteId: string, content: string) => {
 ipcMain.on('app:resizeListWindow', (_, height: number) => {
   if (mainWindow) {
     const minHeight = 100;
-    const maxHeight = 500;
+    const maxHeight = 700;
     const actualHeight = Math.max(minHeight, Math.min(maxHeight, height));
     mainWindow.setSize(300, actualHeight);
   }

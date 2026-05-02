@@ -96,12 +96,16 @@ function App() {
   return (
     <div className="app-container">
       <div className={`main-window ${showList ? 'list-expanded' : ''}`}>
-        <NoteInput
-          onSubmit={handleSubmit}
-          onCommand={handleCommandWrapper}
-          noteCount={noteCount}
-        />
-        <StatusIndicator status={status} />
+        {!showList && (
+          <>
+            <NoteInput
+              onSubmit={handleSubmit}
+              onCommand={handleCommandWrapper}
+              noteCount={noteCount}
+            />
+            <StatusIndicator status={status} />
+          </>
+        )}
         
         {showList && (
           <div className="list-section">

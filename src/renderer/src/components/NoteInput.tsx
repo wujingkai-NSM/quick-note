@@ -7,7 +7,7 @@ interface NoteInputProps {
   noteCount: number;
 }
 
-export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps) {
+export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps): React.ReactElement {
   const [value, setValue] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -21,15 +21,13 @@ export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps) {
   }, [value]);
 
   useEffect(() => {
-    const lineHeight = 24;
-    const baseHeight = 44;
-    const maxHeight = 200;
-    
-    const lines = value.split('\n').length;
-    const contentHeight = lines * lineHeight;
-    const totalHeight = Math.min(Math.max(baseHeight, contentHeight), maxHeight);
-    
-    window.quickNote.app.resizeMainWindow(totalHeight);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const contentHeight = textareaRef.current.scrollHeight;
+      const totalHeight = Math.min(Math.max(44, contentHeight), 200);
+      window.quickNote.app.resizeMainWindow(totalHeight);
+      textareaRef.current.style.height = `${contentHeight}px`;
+    }
   }, [value]);
 
   const filteredCommands = COMMANDS.filter(cmd => {
@@ -56,14 +54,27 @@ export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps) {
         return;
       }
       onCommand(command.command, command.args, content);
+      // 命令执行后根据命令类型决定是否隐藏窗口
+      if (['/list', '/help', '/search'].includes(command.command)) {
+        // 这些命令会显示新的页面，不需要隐藏主窗口
+        setValue('');
+        setEditingNoteId(null);
+        setShowPicker(false);
+        return;
+      }
+      // 其他命令执行完后隐藏窗口
+      setValue('');
+      setEditingNoteId(null);
+      setShowPicker(false);
+      window.quickNote.app.minimize();
     } else {
       onSubmit(trimmedValue, editingNoteId || undefined);
+      setValue('');
+      setEditingNoteId(null);
+      setShowPicker(false);
+      // 只有普通文本提交才隐藏窗口
+      window.quickNote.app.minimize();
     }
-    
-    setValue('');
-    setEditingNoteId(null);
-    setShowPicker(false);
-    window.quickNote.app.minimize();
   }, [value, editingNoteId, onSubmit, onCommand]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -87,6 +98,8 @@ export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps) {
       }
       
       handleSave();
+    } else if (e.key === 'Enter' && e.shiftKey) {
+      // Shift+Enter 输入换行，不阻止默认行为
     } else if (showPicker && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
       if (e.key === 'ArrowUp') {
@@ -153,8 +166,9 @@ export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps) {
       <span className="note-count">{noteCount} 条笔记</span>
       
       {showPicker && (
-        <div className="picker-container">
-          <div className="command-picker-overlay" onClick={() => setShowPicker(false)}>
+        <>
+          <div className="command-picker-overlay" onClick={() => setShowPicker(false)} />
+          <div className="picker-container">
             <div className="command-picker" onClick={(e) => e.stopPropagation()}>
               <div className="picker-header">
                 <span className="picker-title">命令</span>
@@ -184,7 +198,7 @@ export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps) {
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
