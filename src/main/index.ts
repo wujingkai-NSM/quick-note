@@ -14,7 +14,7 @@ function createWindow(): void {
     width: 300,
     height: 44,
     minHeight: 44,
-    maxHeight: 300,
+    maxHeight: 600,
     show: false,
     resizable: false,
     frame: false,
@@ -53,14 +53,25 @@ function createWindow(): void {
     mainWindow?.hide();
   });
 
+  let blurTimeout: ReturnType<typeof setTimeout> | null = null;
+
   mainWindow.on('blur', () => {
-    mainWindow?.hide();
+    blurTimeout = setTimeout(() => {
+      mainWindow?.hide();
+    }, 200);
+  });
+
+  mainWindow.on('focus', () => {
+    if (blurTimeout) {
+      clearTimeout(blurTimeout);
+      blurTimeout = null;
+    }
   });
 }
 
 ipcMain.on('app:showList', () => {
   if (mainWindow) {
-    mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL'] || 'file://'}#list`);
+    mainWindow.webContents.send('app:showListPage');
     mainWindow.show();
     mainWindow.focus();
   }
@@ -68,7 +79,7 @@ ipcMain.on('app:showList', () => {
 
 ipcMain.on('app:showHelp', () => {
   if (mainWindow) {
-    mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL'] || 'file://'}#help`);
+    mainWindow.webContents.send('app:showHelpPage');
     mainWindow.show();
     mainWindow.focus();
   }
@@ -76,7 +87,7 @@ ipcMain.on('app:showHelp', () => {
 
 ipcMain.on('app:showMain', () => {
   if (mainWindow) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] || 'file://');
+    mainWindow.webContents.send('app:showMainPage');
     mainWindow.show();
     mainWindow.focus();
   }
@@ -89,7 +100,7 @@ ipcMain.on('app:setNoteContent', (_, noteId: string, content: string) => {
 ipcMain.on('app:resizeListWindow', (_, height: number) => {
   if (mainWindow) {
     const minHeight = 100;
-    const maxHeight = 360;
+    const maxHeight = 500;
     const actualHeight = Math.max(minHeight, Math.min(maxHeight, height));
     mainWindow.setSize(300, actualHeight);
   }

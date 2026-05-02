@@ -77,33 +77,15 @@ export function NoteInput({ onSubmit, onCommand, noteCount }: NoteInputProps) {
     } else if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       
-      const trimmedValue = value.trim();
-      
-      if (trimmedValue === '/list') {
-        setValue('');
-        setEditingNoteId(null);
-        setShowPicker(false);
-        onCommand('/list', '', '');
-        return;
+      if (showPicker && filteredCommands.length > 0) {
+        const selectedCommand = filteredCommands[selectedIndexRef.current];
+        if (selectedCommand) {
+          handleCommandSelect(selectedCommand);
+          setShowPicker(false);
+          return;
+        }
       }
       
-      if (trimmedValue === '/help') {
-        setValue('');
-        setEditingNoteId(null);
-        setShowPicker(false);
-        onCommand('/help', '', '');
-        return;
-      }
-      
-      if (trimmedValue.startsWith('/search')) {
-        setValue('');
-        setEditingNoteId(null);
-        setShowPicker(false);
-        const keyword = trimmedValue.replace('/search ', '').trim();
-        onCommand('/search', keyword, '');
-        return;
-      }
-
       handleSave();
     } else if (showPicker && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();

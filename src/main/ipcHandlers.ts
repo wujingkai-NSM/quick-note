@@ -4,6 +4,7 @@ import {
   appendToLastNote, 
   renameLastNote, 
   updateNote,
+  deleteNote,
   listNotes, 
   searchNotes, 
   getNotesCount,
@@ -40,6 +41,12 @@ export function setupIpcHandlers(): void {
 
   ipcMain.handle('note:update', async (_, noteId: string, content: string) => {
     const result = updateNote(noteId, content);
+    if (result.success) sendNotesChanged();
+    return result;
+  });
+
+  ipcMain.handle('note:delete', async (_, noteId: string) => {
+    const result = deleteNote(noteId);
     if (result.success) sendNotesChanged();
     return result;
   });

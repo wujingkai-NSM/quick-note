@@ -42,7 +42,7 @@ function findCommandInLine(line: string): { command: string; args: string; befor
           before
         };
       } else {
-        if (after === '' || after.startsWith('/')) {
+        if (after === '' || after.trim() === '' || after.startsWith('/')) {
           return {
             command: cmd.command,
             args: '',

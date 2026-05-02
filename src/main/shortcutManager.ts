@@ -17,7 +17,19 @@ export function registerShortcut(): boolean {
 
   try {
     const success = globalShortcut.register(currentShortcut, () => {
-      if (mainWindow) {
+      if (!mainWindow) return;
+      
+      const url = mainWindow.webContents.getURL();
+      const isOnListPage = url.includes('#list');
+      const isOnHelpPage = url.includes('#help');
+      
+      if (isOnListPage || isOnHelpPage) {
+        // 如果在列表或帮助页面，回到主页面
+        mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] || 'file://');
+        mainWindow.show();
+        mainWindow.focus();
+      } else {
+        // 如果在主页面，切换显示/隐藏
         if (mainWindow.isVisible()) {
           mainWindow.hide();
         } else {

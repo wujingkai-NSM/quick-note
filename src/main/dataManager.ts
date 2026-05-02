@@ -152,6 +152,24 @@ export function updateNote(noteId: string, content: string): CommandResult {
   return { success: true, message: '笔记更新成功', data: note };
 }
 
+export function deleteNote(noteId: string): CommandResult {
+  const index = dataStore.notes.findIndex(n => n.id === noteId);
+  
+  if (index === -1) {
+    return { success: false, message: '笔记不存在' };
+  }
+
+  dataStore.notes.splice(index, 1);
+  
+  if (dataStore.lastNoteId === noteId) {
+    dataStore.lastNoteId = dataStore.notes.length > 0 ? dataStore.notes[0].id : null;
+  }
+  
+  saveDataStore();
+
+  return { success: true, message: '笔记删除成功' };
+}
+
 export function listNotes(limit: number = 10): Note[] {
   return dataStore.notes.slice(0, limit);
 }

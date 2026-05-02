@@ -28,6 +28,9 @@ const api = {
     update: async (noteId: string, content: string): Promise<CommandResult> => {
       return ipcRenderer.invoke('note:update', noteId, content);
     },
+    delete: async (noteId: string): Promise<CommandResult> => {
+      return ipcRenderer.invoke('note:delete', noteId);
+    },
     rename: async (title: string): Promise<CommandResult> => {
       return ipcRenderer.invoke('note:rename', title);
     },
@@ -75,6 +78,18 @@ const api = {
     onBlur: (callback: () => void) => {
       ipcRenderer.on('app:blur', callback);
       return () => ipcRenderer.removeListener('app:blur', callback);
+    },
+    onShowListPage: (callback: () => void) => {
+      ipcRenderer.on('app:showListPage', callback);
+      return () => ipcRenderer.removeListener('app:showListPage', callback);
+    },
+    onShowHelpPage: (callback: () => void) => {
+      ipcRenderer.on('app:showHelpPage', callback);
+      return () => ipcRenderer.removeListener('app:showHelpPage', callback);
+    },
+    onShowMainPage: (callback: () => void) => {
+      ipcRenderer.on('app:showMainPage', callback);
+      return () => ipcRenderer.removeListener('app:showMainPage', callback);
     },
     minimize: () => {
       ipcRenderer.send('minimize-window');

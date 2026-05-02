@@ -50,17 +50,24 @@ export function ListPage({ searchKeyword, onBack, onNoteSelect }: ListPageProps)
     if (notes.length === 0) {
       contentHeight = emptyHeight;
     } else {
-      contentHeight = Math.min(notes.length * noteHeight, 260);
+      contentHeight = Math.min(notes.length * noteHeight, 400);
     }
     
-    const totalHeight = inputHeight + statusHeight + headerHeight + contentHeight + footerHeight;
-    window.quickNote.app.resizeListWindow(Math.min(totalHeight, 400));
+    const totalHeight = headerHeight + contentHeight + footerHeight;
+    window.quickNote.app.resizeListWindow(Math.min(totalHeight, 500));
   }, [notes.length]);
 
   const handleNoteSelect = useCallback((note: Note) => {
     window.quickNote.app.setNoteContent(note.id, note.content);
     onNoteSelect?.();
   }, [onNoteSelect]);
+
+  const handleDeleteNote = useCallback(async () => {
+    if (notes[selectedIndex]) {
+      await window.quickNote.note.delete(notes[selectedIndex].id);
+      setSelectedIndex(prev => Math.max(0, Math.min(prev, notes.length - 2)));
+    }
+  }, [notes, selectedIndex]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -73,8 +80,10 @@ export function ListPage({ searchKeyword, onBack, onNoteSelect }: ListPageProps)
       setSelectedIndex(prev => Math.min(notes.length - 1, prev + 1));
     } else if (e.key === 'Enter' && notes[selectedIndex]) {
       handleNoteSelect(notes[selectedIndex]);
+    } else if (e.key.toLowerCase() === 'd' && notes[selectedIndex]) {
+      handleDeleteNote();
     }
-  }, [notes, selectedIndex, handleNoteSelect]);
+  }, [notes, selectedIndex, handleNoteSelect, handleDeleteNote]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -133,7 +142,7 @@ export function ListPage({ searchKeyword, onBack, onNoteSelect }: ListPageProps)
         )}
       </div>
       <div className="list-footer">
-        <span>↑↓ 选择 · Enter 编辑 · Esc 关闭</span>
+        <span>↑↓ 选择 · Enter 编辑 · D 删除 · Esc 关闭</span>
       </div>
     </div>
   );

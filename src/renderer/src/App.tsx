@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NoteInput } from './components/NoteInput';
 import { StatusIndicator } from './components/StatusIndicator';
 import { ListPage } from './pages/ListPage';
@@ -16,6 +16,34 @@ function App() {
     handleCommand,
     handleContent
   } = useNote();
+
+  useEffect(() => {
+    const handleShowListPage = () => {
+      setSearchKeyword(undefined);
+      setShowList(true);
+      setShowHelp(false);
+    };
+
+    const handleShowHelpPage = () => {
+      setShowHelp(true);
+      setShowList(false);
+    };
+
+    const handleShowMainPage = () => {
+      setShowList(false);
+      setShowHelp(false);
+    };
+
+    const unsubscribeListPage = window.quickNote.app.onShowListPage(handleShowListPage);
+    const unsubscribeHelpPage = window.quickNote.app.onShowHelpPage(handleShowHelpPage);
+    const unsubscribeMainPage = window.quickNote.app.onShowMainPage(handleShowMainPage);
+
+    return () => {
+      unsubscribeListPage?.();
+      unsubscribeHelpPage?.();
+      unsubscribeMainPage?.();
+    };
+  }, []);
 
   const handleSubmit = (content: string, noteId?: string) => {
     const { content: cleanedContent, command } = extractContentAndCommand(content);
